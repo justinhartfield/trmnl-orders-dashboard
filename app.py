@@ -167,6 +167,11 @@ def generate_markup():
             </div>
         </div>
     </div>
+    
+    <div class="title_bar">
+        <span class="title">Orders Dashboard</span>
+        <span class="instance">Metabase</span>
+    </div>
 </div>'''
     
     # Generate half vertical layout
