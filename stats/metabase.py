@@ -111,6 +111,29 @@ def _extract_scalar_from_dataset(data: Optional[Dict[str, Any]]) -> Optional[Any
         return None
     return first_row[0]
 
+def _extract_last_value_from_dataset(data: Optional[Dict[str, Any]]) -> Optional[Any]:
+    """
+    Extract a meaningful scalar from common Metabase “time series” datasets.
+
+    - If rows are [[value]], return that value.
+    - If rows are [[date,value], ...], return the LAST row’s last cell.
+    - Otherwise, return the last row’s last cell.
+    """
+    if not data or not isinstance(data, dict):
+        return None
+    d = data.get("data")
+    if not isinstance(d, dict):
+        return None
+    rows = d.get("rows")
+    if not isinstance(rows, list) or not rows:
+        return None
+    last_row = rows[-1]
+    if not isinstance(last_row, list) or not last_row:
+        return None
+    if len(last_row) == 1:
+        return last_row[0]
+    return last_row[-1]
+
 
 def _dataset_first_row_as_mapping(data: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     """
@@ -122,6 +145,8 @@ def _dataset_first_row_as_mapping(data: Optional[Dict[str, Any]]) -> Dict[str, A
     if not isinstance(d, dict):
         return {}
     cols = d.get("cols")
+    if not cols:
+        cols = d.get("results_metadata", {}).get("columns")
     rows = d.get("rows")
     if not isinstance(cols, list) or not isinstance(rows, list) or not rows:
         return {}
@@ -157,7 +182,7 @@ def fetch_public_card_dataset(base_url: str, card_id: int, timeout_s: int = 30) 
     url = f"{base_url.rstrip('/')}/api/public/card/{card_id}/query"
     try:
         r = requests.get(url, timeout=timeout_s)
-        if r.status_code != 200:
+        if r.status_code not in (200, 202):
             return None
         return r.json()
     except Exception:
@@ -178,7 +203,8 @@ def fetch_card_dataset_with_api_key(
             json={},
             timeout=timeout_s,
         )
-        if r.status_code != 200:
+        # Metabase commonly returns 202 with a complete JSON payload.
+        if r.status_code not in (200, 202):
             return None
         return r.json()
     except Exception:
@@ -390,15 +416,15 @@ def fetch_orders_dashboard_stats(
     # NOTE: These cards are numeric IDs. In many Metabase setups, the "public card" API uses a token,
     # not numeric IDs, so we prefer the API-key path when available.
     if api_key:
-        past_day = _extract_scalar_from_dataset(fetch_card_dataset_with_api_key(b, CARD_PAST_DAY_ORDERS, api_key))
-        past_week = _extract_scalar_from_dataset(fetch_card_dataset_with_api_key(b, CARD_PAST_WEEK_ORDERS, api_key))
-        past_month = _extract_scalar_from_dataset(fetch_card_dataset_with_api_key(b, CARD_PAST_MONTH_ORDERS, api_key))
-        past_quarter = _extract_scalar_from_dataset(fetch_card_dataset_with_api_key(b, CARD_PAST_QUARTER_ORDERS, api_key))
+        past_day = _extract_last_value_from_dataset(fetch_card_dataset_with_api_key(b, CARD_PAST_DAY_ORDERS, api_key))
+        past_week = _extract_last_value_from_dataset(fetch_card_dataset_with_api_key(b, CARD_PAST_WEEK_ORDERS, api_key))
+        past_month = _extract_last_value_from_dataset(fetch_card_dataset_with_api_key(b, CARD_PAST_MONTH_ORDERS, api_key))
+        past_quarter = _extract_last_value_from_dataset(fetch_card_dataset_with_api_key(b, CARD_PAST_QUARTER_ORDERS, api_key))
     else:
-        past_day = _extract_scalar_from_dataset(fetch_public_card_dataset(b, CARD_PAST_DAY_ORDERS))
-        past_week = _extract_scalar_from_dataset(fetch_public_card_dataset(b, CARD_PAST_WEEK_ORDERS))
-        past_month = _extract_scalar_from_dataset(fetch_public_card_dataset(b, CARD_PAST_MONTH_ORDERS))
-        past_quarter = _extract_scalar_from_dataset(fetch_public_card_dataset(b, CARD_PAST_QUARTER_ORDERS))
+        past_day = _extract_last_value_from_dataset(fetch_public_card_dataset(b, CARD_PAST_DAY_ORDERS))
+        past_week = _extract_last_value_from_dataset(fetch_public_card_dataset(b, CARD_PAST_WEEK_ORDERS))
+        past_month = _extract_last_value_from_dataset(fetch_public_card_dataset(b, CARD_PAST_MONTH_ORDERS))
+        past_quarter = _extract_last_value_from_dataset(fetch_public_card_dataset(b, CARD_PAST_QUARTER_ORDERS))
 
     past_day_s = _format_int_de(past_day)
     past_week_s = _format_int_de(past_week)
