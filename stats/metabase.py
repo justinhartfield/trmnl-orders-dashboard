@@ -175,6 +175,7 @@ def fetch_card_dataset_with_api_key(
         r = requests.post(
             url,
             headers={"X-API-KEY": api_key, "Content-Type": "application/json"},
+            json={},
             timeout=timeout_s,
         )
         if r.status_code != 200:
@@ -335,11 +336,19 @@ def fetch_orders_dashboard_stats(
     b = (base_url or os.getenv("METABASE_URL") or METABASE_BASE_URL_DEFAULT).rstrip("/")
     api_key = metabase_api_key if metabase_api_key is not None else os.getenv("METABASE_API_KEY", "").strip()
 
-    # Completed orders (public)
-    past_day = _extract_scalar_from_dataset(fetch_public_card_dataset(b, CARD_PAST_DAY_ORDERS))
-    past_week = _extract_scalar_from_dataset(fetch_public_card_dataset(b, CARD_PAST_WEEK_ORDERS))
-    past_month = _extract_scalar_from_dataset(fetch_public_card_dataset(b, CARD_PAST_MONTH_ORDERS))
-    past_quarter = _extract_scalar_from_dataset(fetch_public_card_dataset(b, CARD_PAST_QUARTER_ORDERS))
+    # Completed orders
+    # NOTE: These cards are numeric IDs. In many Metabase setups, the "public card" API uses a token,
+    # not numeric IDs, so we prefer the API-key path when available.
+    if api_key:
+        past_day = _extract_scalar_from_dataset(fetch_card_dataset_with_api_key(b, CARD_PAST_DAY_ORDERS, api_key))
+        past_week = _extract_scalar_from_dataset(fetch_card_dataset_with_api_key(b, CARD_PAST_WEEK_ORDERS, api_key))
+        past_month = _extract_scalar_from_dataset(fetch_card_dataset_with_api_key(b, CARD_PAST_MONTH_ORDERS, api_key))
+        past_quarter = _extract_scalar_from_dataset(fetch_card_dataset_with_api_key(b, CARD_PAST_QUARTER_ORDERS, api_key))
+    else:
+        past_day = _extract_scalar_from_dataset(fetch_public_card_dataset(b, CARD_PAST_DAY_ORDERS))
+        past_week = _extract_scalar_from_dataset(fetch_public_card_dataset(b, CARD_PAST_WEEK_ORDERS))
+        past_month = _extract_scalar_from_dataset(fetch_public_card_dataset(b, CARD_PAST_MONTH_ORDERS))
+        past_quarter = _extract_scalar_from_dataset(fetch_public_card_dataset(b, CARD_PAST_QUARTER_ORDERS))
 
     past_day_s = _format_int_de(past_day)
     past_week_s = _format_int_de(past_week)

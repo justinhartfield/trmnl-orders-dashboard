@@ -39,8 +39,8 @@ Your TRMNL Orders Dashboard is now set up with automated updates every 15 minute
 
 4. **Metabase Integration**
    - Public Dashboard: https://bi.weed.de/public/dashboard/a529771c-34aa-4f1d-b6e3-6130f99f51c1
-   - Completed orders (past day/week/month/quarter) use public cards (no auth).
-   - “Today” KPIs prefer a summary card requiring `METABASE_API_KEY`.
+   - Completed orders (past day/week/month/quarter) use card IDs (859–862) and require `METABASE_API_KEY`.
+   - “Today” KPIs prefer a summary card (938) requiring `METABASE_API_KEY`.
 
 ### Automated Scheduling
 

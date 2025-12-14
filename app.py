@@ -162,7 +162,11 @@ def health():
 def metrics_json():
     """Debug endpoint to view current computed metrics."""
     stats = _get_stats()
-    return jsonify(stats.__dict__)
+    # Do not expose secrets; just confirm whether the env var exists.
+    d = dict(stats.__dict__)
+    d["metabase_api_key_present"] = bool(os.getenv("METABASE_API_KEY", "").strip())
+    d["metabase_url"] = os.getenv("METABASE_URL", "")
+    return jsonify(d)
 
 @app.route('/plugin/markup', methods=['GET', 'POST'])
 def plugin_markup():

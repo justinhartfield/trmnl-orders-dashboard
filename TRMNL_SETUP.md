@@ -73,7 +73,7 @@ Leave empty (optional field) - This is for user configuration options
    - Command: `python3 push_trmnl.py`
    - Env vars:
      - `TRMNL_WEBHOOK_URL` (your TRMNL custom plugin webhook endpoint)
-     - `METABASE_API_KEY` (only required for the “Today” summary card)
+     - `METABASE_API_KEY` (required for real metrics from Metabase card IDs)
 
 4. Use any scheduler/cron to run it every 15 minutes (Railway cron, Render cron, server cron, etc.).
 
