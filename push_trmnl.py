@@ -27,9 +27,13 @@ def build_merge_variables() -> Dict[str, str]:
         "total_sales": stats.total_sales,
         "total_products": stats.total_products,
         "past_day_orders": stats.past_day_orders,
+        "past_day_change": "",
         "past_week_orders": stats.past_week_orders,
+        "past_week_change": "",
         "past_month_orders": stats.past_month_orders,
+        "past_month_change": "",
         "past_quarter_orders": stats.past_quarter_orders,
+        "past_quarter_change": "",
         "as_of_iso": stats.as_of_iso,
         "source": stats.source,
     }
