@@ -4,7 +4,13 @@ from datetime import datetime
 from flask import Flask, jsonify, request
 from string import Template
 
-from stats.metabase import OrdersDashboardStats, StatsCache, fetch_orders_dashboard_stats
+from stats.metabase import (
+    OrdersDashboardStats,
+    StatsCache,
+    fetch_orders_dashboard_stats,
+    probe_card_with_api_key,
+    probe_public_card,
+)
 
 app = Flask(__name__)
 
@@ -166,6 +172,29 @@ def metrics_json():
     d = dict(stats.__dict__)
     d["metabase_api_key_present"] = bool(os.getenv("METABASE_API_KEY", "").strip())
     d["metabase_url"] = os.getenv("METABASE_URL", "")
+    if request.args.get("debug") == "1":
+        base_url = (os.getenv("METABASE_URL", "") or "https://bi.weed.de").rstrip("/")
+        api_key = os.getenv("METABASE_API_KEY", "").strip()
+        d["metabase_probe"] = {
+            "api_key_cards": (
+                {
+                    "938": probe_card_with_api_key(base_url, 938, api_key),
+                    "859": probe_card_with_api_key(base_url, 859, api_key),
+                    "860": probe_card_with_api_key(base_url, 860, api_key),
+                    "861": probe_card_with_api_key(base_url, 861, api_key),
+                    "862": probe_card_with_api_key(base_url, 862, api_key),
+                }
+                if api_key
+                else {"error": "METABASE_API_KEY not set"}
+            ),
+            "public_cards": {
+                "859": probe_public_card(base_url, 859),
+                "860": probe_public_card(base_url, 860),
+                "861": probe_public_card(base_url, 861),
+                "862": probe_public_card(base_url, 862),
+                "1275": probe_public_card(base_url, 1275),
+            },
+        }
     return jsonify(d)
 
 @app.route('/plugin/markup', methods=['GET', 'POST'])

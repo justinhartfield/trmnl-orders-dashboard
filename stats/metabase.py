@@ -185,6 +185,56 @@ def fetch_card_dataset_with_api_key(
         return None
 
 
+def probe_card_with_api_key(
+    base_url: str,
+    card_id: int,
+    api_key: str,
+    timeout_s: int = 15,
+) -> Dict[str, Any]:
+    """
+    Lightweight diagnostic probe that returns only HTTP metadata (no data payload).
+    Safe to expose in a debug endpoint.
+    """
+    url = f"{base_url.rstrip('/')}/api/card/{card_id}/query"
+    try:
+        r = requests.post(
+            url,
+            headers={"X-API-KEY": api_key, "Content-Type": "application/json"},
+            json={},
+            timeout=timeout_s,
+        )
+        return {
+            "url": url,
+            "status_code": r.status_code,
+            "ok": bool(200 <= r.status_code < 300),
+            "content_type": r.headers.get("content-type", ""),
+        }
+    except Exception as e:
+        return {"url": url, "error": str(e)}
+
+
+def probe_public_card(
+    base_url: str,
+    card_id: int,
+    timeout_s: int = 15,
+) -> Dict[str, Any]:
+    """
+    Probe the public-card endpoint (some Metabase instances require tokenized IDs).
+    Returns only HTTP metadata.
+    """
+    url = f"{base_url.rstrip('/')}/api/public/card/{card_id}/query"
+    try:
+        r = requests.get(url, timeout=timeout_s)
+        return {
+            "url": url,
+            "status_code": r.status_code,
+            "ok": bool(200 <= r.status_code < 300),
+            "content_type": r.headers.get("content-type", ""),
+        }
+    except Exception as e:
+        return {"url": url, "error": str(e)}
+
+
 def _compute_today_from_summary_dataset(summary: Dict[str, Any]) -> Optional[Tuple[str, str, str, str, str]]:
     """
     Attempt to compute today KPIs from a summary dataset (card 938).
