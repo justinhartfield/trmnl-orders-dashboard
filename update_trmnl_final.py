@@ -14,7 +14,7 @@ import json
 
 # Configuration
 METABASE_BASE_URL = 'https://bi.weed.de'
-METABASE_API_KEY = os.getenv('METABASE_API_KEY', 'mb_c1iFO7gACiVcI8UcWMT+/cJSaYspkgJc6/5/5RCw/oM=')
+METABASE_API_KEY = os.getenv('METABASE_API_KEY', '')
 TRMNL_WEBHOOK_URL = os.getenv('TRMNL_WEBHOOK_URL', 'https://usetrmnl.com/api/custom_plugins/3502d5b9-42ed-46d4-a51e-9b7b83ce03d6')
 
 # Card IDs from the dashboard

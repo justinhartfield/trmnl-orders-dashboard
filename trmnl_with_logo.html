@@ -1,0 +1,116 @@
+<!--
+TRMNL Orders Dashboard markup template (Webhook strategy).
+
+This file is intended to be pasted into your TRMNL Custom Plugin template.
+It references merge variables like {{ total_orders }} that are pushed via webhook.
+-->
+
+<div class="view view--full">
+  <div class="layout">
+    <div class="columns">
+      <div class="column">
+        <div class="markdown gap--large">
+          <span class="title">Orders Dashboard</span>
+
+          <span class="label label--underline">Today</span>
+
+          <div class="item">
+            <div class="content">
+              <div class="flex gap--small">
+                <span class="label">Users</span>
+                <span class="value">{{ total_users }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="item">
+            <div class="content">
+              <div class="flex gap--small">
+                <span class="label">Orders</span>
+                <span class="value">{{ total_orders }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="item">
+            <div class="content">
+              <div class="flex gap--small">
+                <span class="label">Quantity</span>
+                <span class="value">{{ total_quantity }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="item">
+            <div class="content">
+              <div class="flex gap--small">
+                <span class="label">Sales</span>
+                <span class="value">{{ total_sales }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="item">
+            <div class="content">
+              <div class="flex gap--small">
+                <span class="label">Products</span>
+                <span class="value">{{ total_products }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="column">
+        <div class="markdown gap--large">
+          <span class="title">Completed Orders</span>
+
+          <div class="item">
+            <div class="content">
+              <div class="flex gap--small">
+                <span class="label">Past Day</span>
+                <span class="value">{{ past_day_orders }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="item">
+            <div class="content">
+              <div class="flex gap--small">
+                <span class="label">Past Week</span>
+                <span class="value">{{ past_week_orders }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="item">
+            <div class="content">
+              <div class="flex gap--small">
+                <span class="label">Past Month</span>
+                <span class="value">{{ past_month_orders }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="item">
+            <div class="content">
+              <div class="flex gap--small">
+                <span class="label">Past Quarter</span>
+                <span class="value">{{ past_quarter_orders }}</span>
+              </div>
+            </div>
+          </div>
+
+          <span class="label label--small">Updated: {{ as_of_iso }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="title_bar">
+    <span class="title">Orders Dashboard</span>
+    <span class="instance">weed.de / Metabase</span>
+  </div>
+</div>
+
+

@@ -21,56 +21,56 @@ Your TRMNL Orders Dashboard is now set up with automated updates every 15 minute
 
 ### Architecture
 
-1. **TRMNL Plugin** (Webhook strategy)
+1. **TRMNL Plugin** (Polling + optional Webhook fallback)
    - Plugin UUID: `3502d5b9-42ed-46d4-a51e-9b7b83ce03d6`
-   - Receives data via webhook POST requests
+   - **Polling**: TRMNL calls your server for the rendered markup (`/plugin/markup`)
+   - **Webhook (optional)**: a scheduled job pushes `merge_variables` to TRMNL
    - Displays data using custom HTML markup with TRMNL framework classes
 
-2. **Update Script** (`update_trmnl_v2.py`)
-   - Fetches data from Metabase public dashboard
-   - Formats data for TRMNL display
-   - Pushes data to TRMNL webhook endpoint
-   - Runs automatically every 15 minutes
+2. **Polling Server** (`app.py`)
+   - Fetches/normalizes metrics from Metabase
+   - Caches for 15 minutes (TTL) with last-known-good fallback
+   - Serves TRMNL markup at `/plugin/markup`
 
-3. **Metabase Integration**
+3. **Webhook Push Job** (`push_trmnl.py`) (optional fallback)
+   - Fetches the same metrics source-of-truth
+   - Pushes merge variables to TRMNL webhook endpoint
+   - Runs every 15 minutes via cron/scheduler
+
+4. **Metabase Integration**
    - Public Dashboard: https://bi.weed.de/public/dashboard/a529771c-34aa-4f1d-b6e3-6130f99f51c1
-   - Fetches completed orders statistics
-   - No authentication required for public dashboard
+   - Completed orders (past day/week/month/quarter) use public cards (no auth).
+   - “Today” KPIs prefer a summary card requiring `METABASE_API_KEY`.
 
 ### Automated Scheduling
 
-The update script runs every 15 minutes (900 seconds) using the Manus scheduling system:
-- **Task Name**: TRMNL Orders Dashboard Update
-- **Interval**: 900 seconds (15 minutes)
-- **Script Location**: `/home/ubuntu/trmnl-orders-dashboard/update_trmnl_v2.py`
+You have two ways to get 15-minute refresh:
+
+1) **Polling only (recommended)**: set TRMNL device refresh to **15 minutes**.
+2) **Webhook fallback**: run `python3 push_trmnl.py` every **900 seconds** using any scheduler/cron.
 
 ## Manual Updates
 
-To manually trigger an update, run:
+To manually trigger a webhook push, run:
 
 ```bash
-cd /home/ubuntu/trmnl-orders-dashboard
-python3 update_trmnl_v2.py
+python3 push_trmnl.py
 ```
 
-Expected output:
-```
-Starting TRMNL update at 2025-12-13 07:26:48.977186
-Fetching completed orders data...
-Past day orders: 363
-Past week orders: 2086
-Past month orders: 6075
-Past quarter orders: 7572
-✓ Successfully pushed data to TRMNL
-✓ TRMNL update completed successfully at 2025-12-13 07:26:50.292493
-```
+Expected output: `✓ pushed TRMNL merge_variables at ...`
 
 ## TRMNL Plugin Configuration
 
 ### Strategy
-**Webhook** - Data is pushed to TRMNL via API
+**Polling** (recommended) + optional **Webhook** fallback
 
-### Webhook URL
+### Polling URL
+Use your deployed server’s URL:
+```
+https://<your-host>/plugin/markup
+```
+
+### Webhook URL (fallback)
 ```
 https://usetrmnl.com/api/custom_plugins/3502d5b9-42ed-46d4-a51e-9b7b83ce03d6
 ```
@@ -79,7 +79,6 @@ https://usetrmnl.com/api/custom_plugins/3502d5b9-42ed-46d4-a51e-9b7b83ce03d6
 The complete HTML markup is stored in `trmnl_with_logo.html`. It includes:
 - Two-column layout
 - TRMNL framework CSS classes
-- Weed.de logo in the title bar
 - Merge variables for dynamic data
 
 ### Merge Variables
@@ -109,15 +108,15 @@ The script sends these variables to TRMNL:
 
 ### Dashboard Not Updating
 
-1. **Check the scheduled task status**
-   - The task should be running every 15 minutes
-   - Check Manus task logs for errors
+1. **If using Polling**
+   - Confirm TRMNL device refresh is set to **15 minutes**
+   - Visit `https://<your-host>/metrics/json` to confirm the server has fresh stats
 
-2. **Run the script manually**
+2. **If using Webhook fallback**
    ```bash
-   python3 /home/ubuntu/trmnl-orders-dashboard/update_trmnl_v2.py
+   python3 push_trmnl.py
    ```
-   - Look for success message: "✓ TRMNL update completed successfully"
+   - Look for success message: "✓ pushed TRMNL merge_variables"
    - Check for error messages
 
 3. **Verify TRMNL webhook**
@@ -132,14 +131,15 @@ The script sends these variables to TRMNL:
 
 If Metabase data isn't updating:
 1. Check if the public dashboard is accessible: https://bi.weed.de/public/dashboard/a529771c-34aa-4f1d-b6e3-6130f99f51c1
-2. Verify the script can fetch data (check error messages)
-3. The script uses fallback values if Metabase is unavailable
+2. Verify your server can reach Metabase (check logs)
+3. The server uses last-known-good cached values if Metabase is temporarily unavailable
 
 ## Future Improvements
 
 ### Real-Time Today's Data
 
-Currently, the "Today's Orders" section uses sample data. To fetch real-time today's data:
+The server fetches real-time “Today” KPIs primarily from a Metabase summary card (requires `METABASE_API_KEY`).
+If that card is unavailable, it will fall back to other sources or last-known-good cache.
 
 1. Identify the Metabase card IDs for today's filtered metrics
 2. Update the script to fetch from those cards
@@ -155,7 +155,8 @@ You can add more metrics by:
 
 ## Files
 
-- `update_trmnl_v2.py` - Main update script
+- `app.py` - Polling server (TRMNL pulls markup)
+- `push_trmnl.py` - Webhook push job (optional fallback)
 - `trmnl_with_logo.html` - TRMNL markup template with logo
 - `AUTOMATION_GUIDE.md` - This documentation
 - `README.md` - Project overview

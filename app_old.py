@@ -13,7 +13,7 @@ app = Flask(__name__)
 
 # Metabase configuration
 METABASE_URL = os.environ.get('METABASE_URL', 'https://bi.weed.de')
-METABASE_API_KEY = os.environ.get('METABASE_API_KEY', 'mb_c1iFO7gACiVcI8UcWMT+/cJSaYspkgJc6/5/5RCw/oM=')
+METABASE_API_KEY = os.environ.get('METABASE_API_KEY', '')
 
 # Metabase card IDs for order metrics
 TOTAL_ORDERS_CARD_ID = 146
