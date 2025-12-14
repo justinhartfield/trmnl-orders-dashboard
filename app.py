@@ -24,7 +24,7 @@ def _get_stats() -> OrdersDashboardStats:
     return stats
 
 _MARKUP_TEMPLATE = Template(
-    """<div class="view view--full">
+    """<div class="view $view_class">
   <div class="layout">
     <div class="columns">
       <div class="column">
@@ -135,10 +135,11 @@ _MARKUP_TEMPLATE = Template(
 )
 
 
-def generate_markup(stats: OrdersDashboardStats) -> str:
+def generate_markup(stats: OrdersDashboardStats, view_class: str) -> str:
     updated_local = datetime.now().strftime("%Y-%m-%d %H:%M")
     return _MARKUP_TEMPLATE.safe_substitute(
         {
+            "view_class": view_class,
             "total_users": stats.total_users,
             "total_orders": stats.total_orders,
             "total_quantity": stats.total_quantity,
@@ -168,27 +169,14 @@ def plugin_markup():
     """Main plugin endpoint that returns TRMNL markup"""
 
     stats = _get_stats()
-    markup = generate_markup(stats)
-
-    # Even though the markup is fully server-rendered, we also include merge_variables
-    # for compatibility with TRMNL and easier troubleshooting.
+    # TRMNL expects layout-specific keys. We render the same KPI content for each view.
     return jsonify(
         {
-            "markup": markup,
-            "merge_variables": {
-                "date": datetime.now().strftime("%b %d, %Y"),
-                "total_users": stats.total_users,
-                "total_orders": stats.total_orders,
-                "total_quantity": stats.total_quantity,
-                "total_sales": stats.total_sales,
-                "total_products": stats.total_products,
-                "past_day_orders": stats.past_day_orders,
-                "past_week_orders": stats.past_week_orders,
-                "past_month_orders": stats.past_month_orders,
-                "past_quarter_orders": stats.past_quarter_orders,
-                "as_of_iso": stats.as_of_iso,
-                "source": stats.source,
-            },
+            "markup": generate_markup(stats, "view--full"),
+            "markup_half_vertical": generate_markup(stats, "view--half_vertical"),
+            "markup_half_horizontal": generate_markup(stats, "view--half_horizontal"),
+            "markup_quadrant": generate_markup(stats, "view--quadrant"),
+            "shared": "",
         }
     )
 
