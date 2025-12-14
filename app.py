@@ -203,6 +203,8 @@ def plugin_markup():
 
     stats = _get_stats()
     # TRMNL expects layout-specific keys. We render the same KPI content for each view.
+    # We ALSO include merge_variables for compatibility with setups where TRMNL stores
+    # the template server-side and only uses merge_variables from polling/webhook.
     return jsonify(
         {
             "markup": generate_markup(stats, "view--full"),
@@ -210,6 +212,20 @@ def plugin_markup():
             "markup_half_horizontal": generate_markup(stats, "view--half_horizontal"),
             "markup_quadrant": generate_markup(stats, "view--quadrant"),
             "shared": "",
+            "merge_variables": {
+                "date": datetime.now().strftime("%b %d, %Y"),
+                "total_users": stats.total_users,
+                "total_orders": stats.total_orders,
+                "total_quantity": stats.total_quantity,
+                "total_sales": stats.total_sales,
+                "total_products": stats.total_products,
+                "past_day_orders": stats.past_day_orders,
+                "past_week_orders": stats.past_week_orders,
+                "past_month_orders": stats.past_month_orders,
+                "past_quarter_orders": stats.past_quarter_orders,
+                "as_of_iso": stats.as_of_iso,
+                "source": stats.source,
+            },
         }
     )
 
