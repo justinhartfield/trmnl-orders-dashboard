@@ -11,6 +11,7 @@ import requests
 
 
 METABASE_BASE_URL_DEFAULT = "https://bi.weed.de"
+METABASE_PUBLIC_DASHBOARD_UUID_DEFAULT = "a529771c-34aa-4f1d-b6e3-6130f99f51c1"
 
 # Public dashboard cards (no auth)
 CARD_PAST_DAY_ORDERS = 859
@@ -20,6 +21,11 @@ CARD_PAST_QUARTER_ORDERS = 862
 
 # Private (API key) “summary” card for Today KPIs (preferred)
 CARD_TODAY_SUMMARY = 938
+
+# Public dashboard dashcard IDs / parameter IDs (used to apply dashboard filters like "today")
+# These come from `/api/public/dashboard/<uuid>` metadata.
+DASHCARD_TODAY_TOTAL = 1081  # dashcard id for card 938 ("Total")
+PARAM_ORDER_DATE_FILTER = "42c3661"
 
 # Optional fallback card for today aggregation (may or may not be public in your instance)
 CARD_TODAY_FALLBACK_PUBLIC = 1275
@@ -182,6 +188,33 @@ def fetch_public_card_dataset(base_url: str, card_id: int, timeout_s: int = 30) 
     url = f"{base_url.rstrip('/')}/api/public/card/{card_id}/query"
     try:
         r = requests.get(url, timeout=timeout_s)
+        if r.status_code not in (200, 202):
+            return None
+        return r.json()
+    except Exception:
+        return None
+
+
+def fetch_public_dashboard_dashcard_dataset(
+    base_url: str,
+    dashboard_uuid: str,
+    dashcard_id: int,
+    card_id: int,
+    parameters: Optional[list] = None,
+    timeout_s: int = 30,
+) -> Optional[Dict[str, Any]]:
+    """
+    Execute a card in the context of a public dashboard (supports dashboard filters).
+
+    Metabase supports passing dashboard parameter values via a `parameters` query param containing JSON.
+    Example: parameters=[{\"id\":\"42c3661\",\"value\":\"today\"}]
+    """
+    url = f"{base_url.rstrip('/')}/api/public/dashboard/{dashboard_uuid}/dashcard/{dashcard_id}/card/{card_id}"
+    try:
+        params = {}
+        if parameters is not None:
+            params["parameters"] = json.dumps(parameters, separators=(",", ":"))
+        r = requests.get(url, params=params, timeout=timeout_s)
         if r.status_code not in (200, 202):
             return None
         return r.json()
@@ -439,11 +472,26 @@ def fetch_orders_dashboard_stats(
     today_sales = "€0,00"
     today_products = "0"
 
-    if api_key:
+    # Prefer executing the card in dashboard context so we can apply `order_date_filter=today`.
+    dashboard_uuid = os.getenv("METABASE_PUBLIC_DASHBOARD_UUID", METABASE_PUBLIC_DASHBOARD_UUID_DEFAULT).strip()
+    order_date_filter_value = os.getenv("ORDER_DATE_FILTER_VALUE", "today").strip() or "today"
+    dashcard_ds = fetch_public_dashboard_dashcard_dataset(
+        b,
+        dashboard_uuid=dashboard_uuid,
+        dashcard_id=DASHCARD_TODAY_TOTAL,
+        card_id=CARD_TODAY_SUMMARY,
+        parameters=[{"id": PARAM_ORDER_DATE_FILTER, "value": order_date_filter_value}],
+    )
+    computed = _compute_today_from_summary_dataset(dashcard_ds) if dashcard_ds else None
+    if computed:
+        today_users, today_orders, today_qty, today_sales, today_products = computed
+        today_source = f"dashboard:{dashboard_uuid}:dashcard:{DASHCARD_TODAY_TOTAL}:card:{CARD_TODAY_SUMMARY}"
+    elif api_key:
+        # Fallback: raw card query (often returns unfiltered totals)
         summary_ds = fetch_card_dataset_with_api_key(b, CARD_TODAY_SUMMARY, api_key)
-        computed = _compute_today_from_summary_dataset(summary_ds) if summary_ds else None
-        if computed:
-            today_users, today_orders, today_qty, today_sales, today_products = computed
+        computed2 = _compute_today_from_summary_dataset(summary_ds) if summary_ds else None
+        if computed2:
+            today_users, today_orders, today_qty, today_sales, today_products = computed2
             today_source = f"card:{CARD_TODAY_SUMMARY}"
 
     # Fallback: public card 1275 aggregation (if accessible)
