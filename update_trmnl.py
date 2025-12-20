@@ -106,7 +106,7 @@ def main():
     """Main function to fetch data and update TRMNL"""
     print(f"Starting TRMNL update at {datetime.now()}")
     
-    today = datetime.now().strftime("%b %d, %Y")
+    today = datetime.now().strftime("%b %d, %Y · %H:%M")
     
     # Fetch completed orders data using API key
     print("Fetching completed orders data from Metabase API...")

@@ -89,7 +89,7 @@ def main():
     """Main function to fetch data and update TRMNL"""
     print(f"Starting TRMNL update at {datetime.now()}")
     
-    today = datetime.now().strftime("%b %d, %Y")
+    today = datetime.now().strftime("%b %d, %Y · %H:%M")
     
     # Fetch completed orders data from public cards
     print("Fetching completed orders data...")

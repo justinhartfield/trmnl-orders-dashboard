@@ -37,7 +37,7 @@ _MARKUP_TEMPLATE = Template(
         <div class="markdown gap--large">
           <span class="title">Orders Dashboard</span>
 
-          <span class="label label--underline">Today</span>
+          <span class="label label--underline">Today · $date</span>
 
           <div class="item">
             <div class="content">
@@ -142,10 +142,11 @@ _MARKUP_TEMPLATE = Template(
 
 
 def generate_markup(stats: OrdersDashboardStats, view_class: str) -> str:
-    updated_local = datetime.now().strftime("%Y-%m-%d %H:%M")
+    updated_local = datetime.now().strftime("%b %d, %Y · %H:%M")
     return _MARKUP_TEMPLATE.safe_substitute(
         {
             "view_class": view_class,
+            "date": updated_local,
             "total_users": stats.total_users,
             "total_orders": stats.total_orders,
             "total_quantity": stats.total_quantity,
@@ -206,7 +207,7 @@ def plugin_markup():
     # We ALSO include merge_variables for compatibility with setups where TRMNL stores
     # the template server-side and only uses merge_variables from polling/webhook.
     merge_vars = {
-        "date": datetime.now().strftime("%b %d, %Y"),
+        "date": datetime.now().strftime("%b %d, %Y · %H:%M"),
         "total_users": stats.total_users,
         "total_orders": stats.total_orders,
         "total_quantity": stats.total_quantity,

@@ -20,7 +20,7 @@ from stats.metabase import fetch_orders_dashboard_stats
 def build_merge_variables() -> Dict[str, str]:
     stats = fetch_orders_dashboard_stats()
     return {
-        "date": datetime.now().strftime("%b %d, %Y"),
+        "date": datetime.now().strftime("%b %d, %Y · %H:%M"),
         "total_users": stats.total_users,
         "total_orders": stats.total_orders,
         "total_quantity": stats.total_quantity,
